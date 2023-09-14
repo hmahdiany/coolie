@@ -1,0 +1,21 @@
+# Sample config file
+---
+repos:
+  - name: quay
+    source: quay.io
+    destination: registry.example.com/coolie
+    images:
+    - name: prometheus/prometheus
+      tags:
+      - v2.37.9
+    - name: prometheus/alertmanager
+      tags:
+      - v0.26.0
+  - name: k8s
+    source: registry.k8s.io
+    destination: registry.example.com/coolie
+    images:
+    - name: kube-apiserver
+      tags:
+      - v1.28.0
+      - v1.27.4
