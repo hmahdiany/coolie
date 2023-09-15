@@ -1,6 +1,7 @@
 builds:
   - env:
       - CGO_ENABLED=0
+    main: cmd/coolie/main.go
     goos:
       - linux
       - windows
