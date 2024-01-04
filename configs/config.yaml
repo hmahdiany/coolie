@@ -3,7 +3,7 @@
 repos:
   - name: quay
     source: quay.io
-    destination: registry.example.com/coolie
+    destination: nexus.ai.sotoon.ir/repository/quay
     images:
     - name: prometheus/prometheus
       tags:
@@ -13,7 +13,7 @@ repos:
       - v0.26.0
   - name: k8s
     source: registry.k8s.io
-    destination: registry.example.com/coolie
+    destination: harbor.ai.sotoon.ir/coolie
     images:
     - name: kube-apiserver
       tags:

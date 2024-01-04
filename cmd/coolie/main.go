@@ -9,6 +9,7 @@ import (
 
 	"github.com/hmahdiany/coolie/pkg/config"
 	"github.com/hmahdiany/coolie/pkg/mirror"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -28,12 +29,32 @@ func main() {
 		fmt.Printf("Using %v as config file\n", path)
 	}
 
+	env := os.Getenv("COOLIE_ENV")
+	if len(env) == 0 {
+		fmt.Println("ENV file is not specified. Set COOLIE_ENV environment variable")
+		os.Exit(1)
+	} else {
+		_, err := os.Stat(env)
+		if err != nil {
+			log.Printf("ENV file %v does not exist\n.", env)
+			os.Exit(2)
+		}
+		fmt.Printf("Using %v as ENV file\n", env)
+		err = godotenv.Load(env)
+		if err != nil {
+			log.Printf("Couldn't load %v values\n.", env)
+			os.Exit(2)
+		}
+	}
+
 	// get config value
 	cfg := config.ReadConfig(path)
 
 	// create a map from container images in config file
 	imageMap := mirror.CreateImageMap(cfg)
 
+	fmt.Println(imageMap)
+	//fmt.Println(imageMap)
 	ctx, cancelFunc := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancelFunc()
 

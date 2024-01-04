@@ -21,7 +21,7 @@ type outputLog struct {
 	Id     string `json:"id"`
 }
 
-func MirrorImages(ctx context.Context, imageMap map[string]string) []error {
+func MirrorImages(ctx context.Context, imageMap map[string][]string) []error {
 	errorList := []error{}
 
 	dockerClient, err := client.NewClientWithOpts()
@@ -34,30 +34,30 @@ func MirrorImages(ctx context.Context, imageMap map[string]string) []error {
 
 	for key, value := range imageMap {
 		wg.Add(1)
-		go func(source, destination string) {
+		go func(source, destination, repoName string) {
 			defer wg.Done()
 
-			err := mirrorImage(ctx, dockerClient, source, destination)
+			err := mirrorImage(ctx, dockerClient, source, destination, repoName)
 
 			if err != nil {
 				printingError := errors.Wrapf(err, "failed to mirror image %s to %s", source, destination)
 				fmt.Println(printingError)
 			}
 
-		}(key, value)
+		}(key, value[0], value[1])
 		wg.Wait()
 	}
 	return errorList
 }
 
-func mirrorImage(ctx context.Context, dockerClient *client.Client, source, destination string) error {
+func mirrorImage(ctx context.Context, dockerClient *client.Client, source, destination, repoName string) error {
 	if err := pullImage(ctx, dockerClient, source); err != nil {
 		return errors.Wrapf(err, "failed to pull image %s", source)
 	}
 	if err := renameImage(ctx, dockerClient, source, destination); err != nil {
 		return errors.Wrapf(err, "failed to rename image %s to %s", source, destination)
 	}
-	if err := pushImage(ctx, dockerClient, destination); err != nil {
+	if err := pushImage(ctx, dockerClient, destination, repoName); err != nil {
 		return errors.Wrapf(err, "failed to push image %s", destination)
 	}
 	return nil
@@ -93,12 +93,12 @@ func renameImage(ctx context.Context, dockerClient *client.Client, source, desti
 	return dockerClient.ImageTag(ctx, source, destination)
 }
 
-func pushImage(ctx context.Context, dockerClient *client.Client, imageTag string) error {
+func pushImage(ctx context.Context, dockerClient *client.Client, imageTag, repoName string) error {
 
 	var registryAuthConfig = registry.AuthConfig{
-		Username:      os.Getenv("REPO_USERNAME"),
-		Password:      os.Getenv("REPO_PASSWORD"),
-		ServerAddress: os.Getenv("REPO_ADDRESS"),
+		Username:      os.Getenv(repoName + "_repo_username"),
+		Password:      os.Getenv(repoName + "_repo_password"),
+		ServerAddress: os.Getenv(repoName + "_repo_address"),
 	}
 
 	registryAuthConfigBytes, err := json.Marshal(registryAuthConfig)
@@ -128,13 +128,13 @@ func pushImage(ctx context.Context, dockerClient *client.Client, imageTag string
 
 		fmt.Printf("status: %v, id: %v\n", outputlog.Status, outputlog.Id)
 	}
-	
+
 	fmt.Printf("pushed image %s\n", imageTag)
 	return nil
 }
 
-func CreateImageMap(cfg config.Config) map[string]string {
-	imageNames := map[string]string{}
+func CreateImageMap(cfg config.Config) map[string][]string {
+	imageNames := map[string][]string{}
 
 	// create source and destination image name
 	for _, registry := range cfg.Repos {
@@ -143,7 +143,8 @@ func CreateImageMap(cfg config.Config) map[string]string {
 				sourceImageTag := registry.Source + "/" + image.Name + ":" + tag
 				desinationImageTag := registry.Destination + "/" + image.Name + ":" + tag
 
-				imageNames[sourceImageTag] = desinationImageTag
+				imageNames[sourceImageTag] = append(imageNames[sourceImageTag], desinationImageTag)
+				imageNames[sourceImageTag] = append(imageNames[sourceImageTag], registry.Name)
 			}
 		}
 	}
