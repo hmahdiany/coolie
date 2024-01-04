@@ -53,8 +53,6 @@ func main() {
 	// create a map from container images in config file
 	imageMap := mirror.CreateImageMap(cfg)
 
-	fmt.Println(imageMap)
-	//fmt.Println(imageMap)
 	ctx, cancelFunc := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancelFunc()
 
