@@ -1,0 +1,29 @@
+# Sample config file
+---
+repos:
+  - name: quay
+    source: quay.io
+    images:
+    - name: prometheus/prometheus
+      tags:
+      - v2.37.9
+    - name: prometheus/alertmanager
+      tags:
+      - v0.26.0
+    destinations:
+    - name: repo1
+      address: repo1.example.com
+    - name: repo2
+      address: repo2.example.com
+  - name: docker
+    source: docker.io
+    images:
+    - name: redis
+      tags:
+      - alpine3.19
+      - 7.2.4-alpine
+    destinations:
+    - name: repo1
+      address: repo1.example.com
+    - name: repo2
+      address: repo2.example.com

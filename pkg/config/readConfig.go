@@ -14,13 +14,18 @@ type Config struct {
 type Repository struct {
 	Name        string     `json:"name"`
 	Source      string     `json:"source"`
-	Destination string     `json:"destination"`
 	Images      []ImageTag `json:"images"`
+	Destinations []ImageDst     `json:"destinations"`
 }
 
 type ImageTag struct {
 	Name string   `json:"name"`
 	Tags []string `json:"tags"`
+}
+
+type ImageDst struct {
+	Name string   `json:"name"`
+	Address string `json:"address"`
 }
 
 func ReadConfig(path string) (cfg Config){

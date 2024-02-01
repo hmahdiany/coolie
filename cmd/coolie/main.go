@@ -50,14 +50,14 @@ func main() {
 	// get config value
 	cfg := config.ReadConfig(path)
 
-	// create a map from container images in config file
+	//create a map from container images in config file
 	imageMap := mirror.CreateImageMap(cfg)
 
 	ctx, cancelFunc := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancelFunc()
 
 	// start mirroring
-	errorList := mirror.MirrorImages(ctx, imageMap)
+	errorList := mirror.MirrorImages(ctx, cfg, imageMap)
 
 	if len(errorList) == 0 {
 		fmt.Println("All image tags in config file were processed")
