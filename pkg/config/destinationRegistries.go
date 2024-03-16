@@ -1,27 +1,16 @@
 package config
 
 
-func DestinationRegistry(cfg Config) []string {
+func DestinationRegistry(cfg Config) map[string]string {
 
 	// create a list of destination registries
-	destinationRegistries := []string{}
+	destinationRegistries := map[string]string{}
 
 	for _, repo := range cfg.Repos {
 		for _, dst := range repo.Destinations {
-			destinationRegistries = append(destinationRegistries, dst.Name)
+			destinationRegistries[dst.Name] = dst.Address
 		}
 	}
 
-	// remove duplicate values
-	registryMap := make(map[string]bool)
-	destinationRegistryList := []string{}
-
-	for _, value := range destinationRegistries {
-		if _, ok := registryMap[value]; !ok {
-			registryMap[value] = true
-			destinationRegistryList = append(destinationRegistryList, value)
-		}
-	}
-
-	return destinationRegistryList
+	return destinationRegistries
 }

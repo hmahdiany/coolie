@@ -3,10 +3,9 @@ package mirror
 import (
 	"bufio"
 	"context"
-
-	//"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/docker/docker/api/types"
@@ -29,9 +28,6 @@ func MirrorImages(ctx context.Context, cfg config.Config, imageMap map[string][]
 		return errorList
 	}
 
-	//login to destination registries
-	logintoregistry(ctx, cfg, dockerClient)
-
 	wg := sync.WaitGroup{}
 
 	for key, value := range imageMap {
@@ -47,8 +43,8 @@ func MirrorImages(ctx context.Context, cfg config.Config, imageMap map[string][]
 			}
 
 		}(cfg, key, value[:])
-		wg.Wait()
 	}
+	wg.Wait()
 	return errorList
 }
 
@@ -103,27 +99,23 @@ func renameImage(ctx context.Context, dockerClient *client.Client, source string
 
 func pushImage(ctx context.Context, cfg config.Config, dockerClient *client.Client, imageTags []string) error {
 
-
-	// registryAuthConfigBytes, err := json.Marshal(registryAuthConfig)
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to create regstry auth config")
-	// }
-
-	// registryAuthConfigEncoded := base64.URLEncoding.EncodeToString(registryAuthConfigBytes)
-
-	// opts := types.ImagePushOptions{
-	// 	RegistryAuth: registryAuthConfigEncoded,
-	// }
-
 	// loop through destinationRegistryList to push images
 	for _, tag := range imageTags {
 
-		fmt.Println("tag list: ", imageTags)
-		fmt.Println("current tag: ", tag)
-		fmt.Printf("Starting push loop: %v\n", tag)
-		rc, err := dockerClient.ImagePush(ctx, tag, types.ImagePushOptions{})
+		targetRepo := strings.Split(tag, "/")
+
+		opts, err := logintoregistry(ctx, cfg, dockerClient, targetRepo[0])
 		if err != nil {
-			return errors.Wrap(err, "failed to push image with docker client")
+			fmt.Println(err)
+			fmt.Printf("Could not push images to %v \n", targetRepo[0])
+			continue
+		}
+
+		fmt.Printf("Star pushing: %v/%v\n", tag, opts)
+		rc, err := dockerClient.ImagePush(ctx, tag, opts)
+		if err != nil {
+			fmt.Println(errors.Wrap(err, "failed to push image with docker client"))
+			continue
 		}
 
 		var outputlog outputLog
@@ -134,7 +126,7 @@ func pushImage(ctx context.Context, cfg config.Config, dockerClient *client.Clie
 			line := scanner.Text()
 			err := json.Unmarshal([]byte(line), &outputlog)
 			if err != nil {
-				return err
+				fmt.Println(err)
 			}
 
 			fmt.Printf("status: %v, id: %v\n", outputlog.Status, outputlog.Id)
